@@ -1,12 +1,13 @@
 const net = require('node:net');
 const PORT = 5567;
-const HOST = '0.0.0.0';
+const HOST = '0.0.0.0'; // ::1 for ipv6
 
 const store = {};
 
 const server = net
-  .createServer((socket) => {
+  .createServer({ allowHalfOpen: true }, (socket) => {
     console.log('Client connected');
+    socket.write(`Welcome to the server, my IP is ${socket.localAddress}`);
 
     socket.on('data', (data) => {
       let body = data.toString();
@@ -26,14 +27,27 @@ const server = net
           response = dataProcessor4(body.substring(1, body.length - 1));
           break;
         default:
-          socket.write('Invalid command');
+          socket.write(
+            JSON.stringify({
+              remoteAddr: socket.remoteAddress,
+              remotePort: socket.remotePort,
+              localAddr: socket.localAddress,
+              localPort: socket.localPort,
+            })
+          );
           break;
       }
       socket.write(response);
     });
 
+    socket.on('error', (err) => {
+      console.error(err);
+    });
+
     socket.on('end', () => {
+      // socket.write('Goodbye');
       console.log('Client disconnected');
+      socket.end();
     });
   })
   .listen(PORT, HOST, () => {
@@ -63,7 +77,7 @@ function dataProcessor1(data) {
   // Process data
   console.log(`Before processing: ${data}`);
   const body = data.split(';');
-  let command = body[0];
+  let command = body[0]; // w, r, d, l
   let key = body[1];
   let value = body[2];
   console.log(`command: ${command}, key: ${key}, value: ${value}`);
