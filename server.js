@@ -45,8 +45,9 @@ const server = net
     });
 
     socket.on('end', () => {
+      const dt = new Date();
       // socket.write('Goodbye');
-      console.log('Client disconnected');
+      console.log(`Client disconnected at ${dt.toISOString()}`);
       socket.end();
     });
   })
